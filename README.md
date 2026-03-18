@@ -1,6 +1,6 @@
 # Simple Logger
 
-A simple logging utility for Rust applications that supports logging to console, file, or both.
+A simple vibe coded logging utility for Rust applications that supports logging to console, file, or both.
 
 ## Features
 
