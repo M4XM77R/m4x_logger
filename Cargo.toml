@@ -1,7 +1,13 @@
 [package]
-name = "rust"
-version = "0.1.0"
-edition = "2024"
+name = "m4x_logger"
+version = "0.0.1"
+edition = "2026"
+
+description = "A simple logging utility for Rust applications"
+license = "MIT"
+repository = "https://github.com/yourusername/simple_logger"  # Update this
+keywords = ["logging", "logger", "console", "file"]
+categories = ["development-tools"]
 
 [dependencies]
-rand = "0.8.5"
+chrono = "0.4"
