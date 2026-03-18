@@ -26,27 +26,45 @@
 //!
 //! - Log to console, file, or both
 //! - Automatic timestamp generation
+//! - Configurable log levels (Error, Warn, Info, Debug, Trace)
 //! - Thread-safe (Clone implementation)
 //!
 //! ## Example
 //!
 //! ```rust
-//! use m4x_logger::{Logger, LogDestination};
+//! use m4x_logger::{Logger, LogDestination, LogLevel};
 //!
-//! let logger = Logger::new(LogDestination::Console);
-//! logger.log("This is a log message");
+//! let logger = Logger::new(LogDestination::Console, LogLevel::Info);
+//! logger.info("This is an info message");
+//! logger.error("This is an error message");
+//! logger.debug("This debug message won't be shown");
 //!
-//! let logger_file = Logger::new(LogDestination::File("app.log".to_string()));
-//! logger_file.log("This goes to file");
+//! let logger_file = Logger::new(LogDestination::File("app.log".to_string()), LogLevel::Debug);
+//! logger_file.debug("This goes to file");
 //!
-//! let logger_both = Logger::new(LogDestination::Both("app.log".to_string()));
-//! logger_both.log("This goes to both console and file");
+//! let logger_both = Logger::new(LogDestination::Both("app.log".to_string()), LogLevel::Warn);
+//! logger_both.warn("This goes to both console and file");
 //! ```
 
 use chrono::Local;
 use std::fmt::Debug;
 use std::fs::OpenOptions;
 use std::io::Write;
+
+/// Represents the log level for filtering messages.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum LogLevel {
+    /// Only error messages
+    Error = 0,
+    /// Warning and error messages
+    Warn = 1,
+    /// Info, warning, and error messages
+    Info = 2,
+    /// Debug, info, warning, and error messages
+    Debug = 3,
+    /// All messages including trace
+    Trace = 4,
+}
 
 /// Represents the destination for log messages.
 #[derive(Clone)]
@@ -61,24 +79,38 @@ pub enum LogDestination {
     Both(String),
 }
 
-/// A simple logger that can write messages to various destinations with timestamps.
+/// A simple logger that can write messages to various destinations with timestamps and log levels.
 #[derive(Clone)]
 pub struct Logger {
     destination: LogDestination,
+    level: LogLevel,
 }
 
 impl Logger {
-    /// Creates a new Logger with the specified destination.
+    /// Creates a new Logger with the specified destination and minimum log level.
     ///
     /// # Examples
     ///
     /// ```
-    /// use simple_logger::{Logger, LogDestination};
+    /// use m4x_logger::{Logger, LogDestination, LogLevel};
     ///
-    /// let logger = Logger::new(LogDestination::Console);
+    /// let logger = Logger::new(LogDestination::Console, LogLevel::Info);
     /// ```
-    pub fn new(destination: LogDestination) -> Self {
-        Self { destination }
+    pub fn new(destination: LogDestination, level: LogLevel) -> Self {
+        Self { destination, level }
+    }
+
+    /// Creates a new Logger with the specified destination and default log level (Info).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use m4x_logger::{Logger, LogDestination};
+    ///
+    /// let logger = Logger::with_destination(LogDestination::Console);
+    /// ```
+    pub fn with_destination(destination: LogDestination) -> Self {
+        Self::new(destination, LogLevel::Info)
     }
 
     /// Generates a timestamped filename for log files.
@@ -88,32 +120,43 @@ impl Logger {
     /// # Examples
     ///
     /// ```
-    /// let filename = simple_logger::Logger::generate_timestamp_filename();
+    /// let filename = m4x_logger::Logger::generate_timestamp_filename();
     /// println!("Log file: {}", filename);
     /// ```
     pub fn generate_timestamp_filename() -> String {
         let now = Local::now();
-        let timestamp = now.format("%d:%m:%Y:%H:%M:%S");
+        let timestamp = now.format("%d.%m.%Y.%H.%M.%S");
         format!("{}.log", timestamp)
     }
 
-    /// Logs a debuggable value with a timestamp.
+    /// Logs a debuggable value with a timestamp and specified log level.
     ///
-    /// The message format is: `[DD:MM:YYYY HH:MM:SS] [LOG] {value:?}\n`
+    /// The message format is: `[DD:MM:YYYY HH:MM:SS] [LEVEL] {value:?}\n`
     ///
     /// # Examples
     ///
     /// ```
-    /// use simple_logger::{Logger, LogDestination};
+    /// use m4x_logger::{Logger, LogDestination, LogLevel};
     ///
-    /// let logger = Logger::new(LogDestination::Console);
-    /// logger.log("Hello, world!");
-    /// logger.log(42);
+    /// let logger = Logger::new(LogDestination::Console, LogLevel::Info);
+    /// logger.log(LogLevel::Info, "Hello, world!");
+    /// logger.log(LogLevel::Error, 42);
     /// ```
-    pub fn log<T: Debug>(&self, var: T) {
+    pub fn log<T: Debug>(&self, level: LogLevel, var: T) {
+        if level > self.level {
+            return;
+        }
+
         let now = Local::now();
         let timestamp = now.format("%d:%m:%Y %H:%M:%S").to_string();
-        let message = format!("[{timestamp}] [LOG] {:?}\n", var);
+        let level_str = match level {
+            LogLevel::Error => "ERROR",
+            LogLevel::Warn => "WARN",
+            LogLevel::Info => "INFO",
+            LogLevel::Debug => "DEBUG",
+            LogLevel::Trace => "TRACE",
+        };
+        let message = format!("[{timestamp}] [{level_str}] {:?}\n", var);
 
         match &self.destination {
             LogDestination::None => {
@@ -142,5 +185,75 @@ impl Logger {
                 }
             }
         }
+    }
+
+    /// Logs an error message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use m4x_logger::{Logger, LogDestination, LogLevel};
+    ///
+    /// let logger = Logger::new(LogDestination::Console, LogLevel::Info);
+    /// logger.error("This is an error");
+    /// ```
+    pub fn error<T: Debug>(&self, var: T) {
+        self.log(LogLevel::Error, var);
+    }
+
+    /// Logs a warning message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use m4x_logger::{Logger, LogDestination, LogLevel};
+    ///
+    /// let logger = Logger::new(LogDestination::Console, LogLevel::Info);
+    /// logger.warn("This is a warning");
+    /// ```
+    pub fn warn<T: Debug>(&self, var: T) {
+        self.log(LogLevel::Warn, var);
+    }
+
+    /// Logs an info message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use m4x_logger::{Logger, LogDestination, LogLevel};
+    ///
+    /// let logger = Logger::new(LogDestination::Console, LogLevel::Info);
+    /// logger.info("This is an info message");
+    /// ```
+    pub fn info<T: Debug>(&self, var: T) {
+        self.log(LogLevel::Info, var);
+    }
+
+    /// Logs a debug message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use m4x_logger::{Logger, LogDestination, LogLevel};
+    ///
+    /// let logger = Logger::new(LogDestination::Console, LogLevel::Debug);
+    /// logger.debug("This is a debug message");
+    /// ```
+    pub fn debug<T: Debug>(&self, var: T) {
+        self.log(LogLevel::Debug, var);
+    }
+
+    /// Logs a trace message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use m4x_logger::{Logger, LogDestination, LogLevel};
+    ///
+    /// let logger = Logger::new(LogDestination::Console, LogLevel::Trace);
+    /// logger.trace("This is a trace message");
+    /// ```
+    pub fn trace<T: Debug>(&self, var: T) {
+        self.log(LogLevel::Trace, var);
     }
 }

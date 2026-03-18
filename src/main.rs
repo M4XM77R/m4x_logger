@@ -17,9 +17,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-use m4x_logger::{Logger, LogDestination};
+use m4x_logger::{Logger, LogDestination, LogLevel};
 
 fn main() {
-    let logger = Logger::new(LogDestination::Console);
-    logger.log("This is a test log message.");
+    let logger = Logger::new(LogDestination::Console, LogLevel::Info);
+    logger.log(LogLevel::Info, "This is a test log message.");
+    logger.error("This is an error message.");
+    logger.warn("This is a warning message.");
+    logger.info("This is an info message.");
+    logger.debug("This debug message won't show (level is Info).");
 }
