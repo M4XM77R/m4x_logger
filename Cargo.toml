@@ -1,11 +1,11 @@
 [package]
 name = "m4x_logger"
 version = "0.0.1"
-edition = "2026"
+edition = "2021"
 
 description = "A simple logging utility for Rust applications"
 license = "MIT"
-repository = "https://github.com/yourusername/simple_logger"  # Update this
+repository = "https://github.com/max/m4x_logger"
 keywords = ["logging", "logger", "console", "file"]
 categories = ["development-tools"]
 
