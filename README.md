@@ -7,6 +7,7 @@ A simple vibe coded logging utility for Rust applications that supports logging 
 - Log to console, file, or both
 - Automatic timestamp generation
 - Configurable log levels (Error, Warn, Info, Debug, Trace)
+- Automatic log level based on build mode (Trace in debug, Error in release)
 - Thread-safe (Clone implementation)
 
 ## Installation
@@ -47,11 +48,24 @@ fn main() {
     let logger_both = Logger::new(LogDestination::Both("app.log".to_string()), LogLevel::Warn);
     logger_both.warn("This goes to both console and file");
 
+    // Using default level based on build mode
+    let logger_default = Logger::with_destination(LogDestination::Console);
+    logger_default.info("This uses Trace level in debug builds, Error level in release");
+
     // Generate a timestamped filename
     let filename = Logger::generate_timestamp_filename();
     println!("Log file: {}", filename);
 }
 ```
+
+## Build Mode Behavior
+
+The `Logger::with_destination()` method automatically selects the appropriate log level:
+
+- **Debug builds** (`cargo build`): Uses `Trace` level - all messages are logged
+- **Release builds** (`cargo build --release`): Uses `Error` level - only errors are logged
+
+This provides maximum verbosity during development and minimal overhead in production.
 
 ## Log Levels
 

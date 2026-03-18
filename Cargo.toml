@@ -3,7 +3,7 @@ name = "m4x_logger"
 version = "0.0.2"
 edition = "2021"
 
-description = "A simple logging utility for Rust applications"
+description = "A simple vibe coded logging utility for Rust applications"
 license = "MIT"
 repository = "https://github.com/M4XM77R/m4x_logger"
 keywords = ["logging", "logger", "console", "file"]

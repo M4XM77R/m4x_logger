@@ -20,10 +20,35 @@
 use m4x_logger::{Logger, LogDestination, LogLevel};
 
 fn main() {
-    let logger = Logger::new(LogDestination::Console, LogLevel::Info);
-    logger.log(LogLevel::Info, "This is a test log message.");
-    logger.error("This is an error message.");
-    logger.warn("This is a warning message.");
-    logger.info("This is an info message.");
-    logger.debug("This debug message won't show (level is Info).");
+    // Test explicit log level
+    let logger_explicit = Logger::new(LogDestination::Console, LogLevel::Info);
+    logger_explicit.log(LogLevel::Info, "This is a test log message with explicit Info level.");
+    logger_explicit.error("This is an error message.");
+    logger_explicit.warn("This is a warning message.");
+    logger_explicit.info("This is an info message.");
+    logger_explicit.debug("This debug message won't show (level is Info).");
+    logger_explicit.trace("This trace message won't show (level is Info).");
+
+    println!("\n--- Testing automatic level selection ---");
+
+    // Test automatic level selection based on build mode
+    let logger_auto = Logger::with_destination(LogDestination::Console);
+    println!("Default level: {:?}", Logger::default_level());
+    logger_auto.error("This is an error message (should always show).");
+    logger_auto.warn("This is a warning message.");
+    logger_auto.info("This is an info message.");
+    logger_auto.debug("This is a debug message.");
+    logger_auto.trace("This is a trace message.");
+
+    println!("\n--- Testing file logging ---");
+
+    // Test file logging that should NOT create files (filtered out)
+    let logger_file_filtered = Logger::new(LogDestination::File("test_filtered.log".to_string()), LogLevel::Error);
+    logger_file_filtered.info("This info message should not create a file.");
+    logger_file_filtered.debug("This debug message should not create a file.");
+
+    // Test file logging that SHOULD create files
+    let logger_file_created = Logger::new(LogDestination::File("test_created.log".to_string()), LogLevel::Info);
+    logger_file_created.error("This error message should create a file.");
+    logger_file_created.info("This info message should also be in the file.");
 }

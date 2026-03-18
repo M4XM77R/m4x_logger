@@ -27,6 +27,7 @@
 //! - Log to console, file, or both
 //! - Automatic timestamp generation
 //! - Configurable log levels (Error, Warn, Info, Debug, Trace)
+//! - Automatic log level based on build mode (Trace in debug, Error in release)
 //! - Thread-safe (Clone implementation)
 //!
 //! ## Example
@@ -44,6 +45,10 @@
 //!
 //! let logger_both = Logger::new(LogDestination::Both("app.log".to_string()), LogLevel::Warn);
 //! logger_both.warn("This goes to both console and file");
+//!
+//! // Using default level based on build mode
+//! let logger_default = Logger::with_destination(LogDestination::Console);
+//! logger_default.info("This uses Trace level in debug builds, Error level in release");
 //! ```
 
 use chrono::Local;
@@ -100,7 +105,8 @@ impl Logger {
         Self { destination, level }
     }
 
-    /// Creates a new Logger with the specified destination and default log level (Info).
+    /// Creates a new Logger with the specified destination and default log level.
+    /// In debug builds (dev mode), the default level is Trace. In release builds, it's Error.
     ///
     /// # Examples
     ///
@@ -110,7 +116,26 @@ impl Logger {
     /// let logger = Logger::with_destination(LogDestination::Console);
     /// ```
     pub fn with_destination(destination: LogDestination) -> Self {
-        Self::new(destination, LogLevel::Info)
+        Self::new(destination, Self::default_level())
+    }
+
+    /// Returns the default log level based on build mode.
+    /// - Debug builds: Trace (all messages)
+    /// - Release builds: Error (only errors)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use m4x_logger::Logger;
+    ///
+    /// let level = Logger::default_level();
+    /// ```
+    pub fn default_level() -> LogLevel {
+        #[cfg(debug_assertions)]
+        return LogLevel::Trace;
+        
+        #[cfg(not(debug_assertions))]
+        return LogLevel::Info;
     }
 
     /// Generates a timestamped filename for log files.
