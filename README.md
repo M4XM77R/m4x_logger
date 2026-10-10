@@ -7,8 +7,8 @@ A simple vibe coded logging utility for Rust applications that supports logging 
 - Log to console, file, or both
 - Automatic timestamp generation
 - Configurable log levels (Error, Warn, Info, Debug, Trace)
-- Automatic log level based on build mode (Trace in debug, Error in release)
-- Thread-safe (Clone implementation)
+- Automatic log level based on build mode (Trace in debug, Info in release)
+- Cloneable and safe to share across threads (no internal locking)
 
 ## Installation
 
@@ -50,7 +50,7 @@ fn main() {
 
     // Using default level based on build mode
     let logger_default = Logger::with_destination(LogDestination::Console);
-    logger_default.info("This uses Trace level in debug builds, Error level in release");
+    logger_default.info("This uses Trace level in debug builds, Info level in release");
 
     // Generate a timestamped filename
     let filename = Logger::generate_timestamp_filename();
@@ -63,9 +63,9 @@ fn main() {
 The `Logger::with_destination()` method automatically selects the appropriate log level:
 
 - **Debug builds** (`cargo build`): Uses `Trace` level - all messages are logged
-- **Release builds** (`cargo build --release`): Uses `Error` level - only errors are logged
+- **Release builds** (`cargo build --release`): Uses `Info` level - info, warnings and errors are logged
 
-This provides maximum verbosity during development and minimal overhead in production.
+This provides maximum verbosity during development and less noise in production.
 
 ## Log Levels
 
@@ -78,7 +78,7 @@ This provides maximum verbosity during development and minimal overhead in produ
 ## API
 
 - `Logger::new(destination, level)`: Create a new logger with specified destination and log level
-- `Logger::with_destination(destination)`: Create a new logger with default Info level
+- `Logger::with_destination(destination)`: Create a new logger with a build-mode default level (see above)
 - `Logger::log(level, value)`: Log a debuggable value with specified level
 - `Logger::error(value)`, `Logger::warn(value)`, `Logger::info(value)`, `Logger::debug(value)`, `Logger::trace(value)`: Convenience methods for each log level
 - `Logger::generate_timestamp_filename()`: Generate a timestamped filename

@@ -27,8 +27,8 @@
 //! - Log to console, file, or both
 //! - Automatic timestamp generation
 //! - Configurable log levels (Error, Warn, Info, Debug, Trace)
-//! - Automatic log level based on build mode (Trace in debug, Error in release)
-//! - Thread-safe (Clone implementation)
+//! - Automatic log level based on build mode (Trace in debug, Info in release)
+//! - Cloneable and safe to share across threads (no internal locking)
 //!
 //! ## Example
 //!
@@ -48,7 +48,7 @@
 //!
 //! // Using default level based on build mode
 //! let logger_default = Logger::with_destination(LogDestination::Console);
-//! logger_default.info("This uses Trace level in debug builds, Error level in release");
+//! logger_default.info("This uses Trace level in debug builds, Info level in release");
 //! ```
 
 use chrono::Local;
@@ -106,7 +106,7 @@ impl Logger {
     }
 
     /// Creates a new Logger with the specified destination and default log level.
-    /// In debug builds (dev mode), the default level is Trace. In release builds, it's Error.
+    /// In debug builds (dev mode), the default level is Trace. In release builds, it's Info.
     ///
     /// # Examples
     ///
@@ -121,7 +121,7 @@ impl Logger {
 
     /// Returns the default log level based on build mode.
     /// - Debug builds: Trace (all messages)
-    /// - Release builds: Error (only errors)
+    /// - Release builds: Info (info, warnings and errors)
     ///
     /// # Examples
     ///
@@ -140,7 +140,7 @@ impl Logger {
 
     /// Generates a timestamped filename for log files.
     ///
-    /// The format is `DD:MM:YYYY:HH:MM:SS.log`.
+    /// The format is `DD.MM.YYYY.HH.MM.SS.log`.
     ///
     /// # Examples
     ///
