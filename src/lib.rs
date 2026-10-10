@@ -282,3 +282,56 @@ impl Logger {
         self.log(LogLevel::Trace, var);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    fn temp_log_path(name: &str) -> String {
+        let path = std::env::temp_dir().join(format!("m4x_logger_{}_{}.log", name, std::process::id()));
+        let _ = fs::remove_file(&path);
+        path.to_string_lossy().into_owned()
+    }
+
+    #[test]
+    fn log_levels_are_ordered_by_verbosity() {
+        assert!(LogLevel::Error < LogLevel::Warn);
+        assert!(LogLevel::Warn < LogLevel::Info);
+        assert!(LogLevel::Info < LogLevel::Debug);
+        assert!(LogLevel::Debug < LogLevel::Trace);
+    }
+
+    #[test]
+    fn timestamp_filename_has_expected_format() {
+        let filename = Logger::generate_timestamp_filename();
+        // DD.MM.YYYY.HH.MM.SS.log
+        assert_eq!(filename.len(), 23);
+        assert!(filename.ends_with(".log"));
+        assert!(!filename.contains(':'), "filename must be valid on Windows");
+    }
+
+    #[test]
+    fn file_logger_filters_messages_above_level() {
+        let path = temp_log_path("filter");
+        let logger = Logger::new(LogDestination::File(path.clone()), LogLevel::Warn);
+        logger.error("kept error");
+        logger.warn("kept warn");
+        logger.info("dropped info");
+        logger.trace("dropped trace");
+
+        let contents = fs::read_to_string(&path).unwrap();
+        let _ = fs::remove_file(&path);
+        assert!(contents.contains("[ERROR] \"kept error\""));
+        assert!(contents.contains("[WARN] \"kept warn\""));
+        assert!(!contents.contains("dropped"));
+    }
+
+    #[test]
+    fn filtered_messages_do_not_create_file() {
+        let path = temp_log_path("nofile");
+        let logger = Logger::new(LogDestination::File(path.clone()), LogLevel::Error);
+        logger.info("should not be written");
+        assert!(!std::path::Path::new(&path).exists());
+    }
+}
